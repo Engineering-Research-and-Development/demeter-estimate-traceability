@@ -101,7 +101,7 @@ import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.providers.jaxb.Formatted;
 import it.eng.is3lab.traceability.pyplugin.PyModuleExecutor;
 
-@Path("/milkQuality")
+@Path("/traceability")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class TServiceEndpoints implements TService{
