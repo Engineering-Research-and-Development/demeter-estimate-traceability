@@ -124,7 +124,7 @@ public class PyModuleExecutor {
 			// Proxify the call to a python class.
 	        PyModule rfModule = PyModule.importModule("RandomForestModule");
 	        log.debug("Calling the random forest module class.");
-	        PyObject rfObject = rfModule.call("RandomForest");
+	        PyObject rfObject = rfModule.call("MilkQualityRandomForest");
 	        RFModulePlugin rfPlugIn = rfObject.createProxy(RFModulePlugin.class);
 	        // Execute the python function.
 	        switch(operation) 

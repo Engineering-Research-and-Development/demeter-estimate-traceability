@@ -3,7 +3,7 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 21/09/2020
+ * Date: 23/09/2020
  * Company: Engineering Ingegneria Informatica S.p.A.
  * 
  * Implements the Traceability Service interface and define the 
@@ -16,15 +16,15 @@
  * /Path value annotation of the class/Path value annotation of the method
  * 
  * Training complete URL example 
- * http://localhost:8080/EstimateMilkQualityModule/milkQuality/Training
+ * http://localhost:8080/EstimateMilkQualityModule/traceability/Training
  * 
  * Prediction complete URL example 
- * http://localhost:8080/EstimateMilkQualityModule/milkQuality/Predictions
+ * http://localhost:8080/EstimateMilkQualityModule/traceability/Predictions
  * 
  * 
  * Method      : training
  * 
- * Endpoint    : /milkQuality/Training 
+ * Endpoint    : /traceability/Training 
  * 
  * Type        : POST
  * 
@@ -46,7 +46,7 @@
  * 
  * Method      : prediction
  * 
- * Endpoint    : /milkQuality/Predictions
+ * Endpoint    : /traceability/Predictions
  * 
  * Type        : POST
  * 
