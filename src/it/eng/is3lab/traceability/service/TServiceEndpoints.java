@@ -88,6 +88,7 @@ import java.io.InputStreamReader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -99,21 +100,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.jboss.resteasy.annotations.providers.jaxb.Formatted;
+
 import it.eng.is3lab.traceability.pyplugin.PyModuleExecutor;
 
-@Path("/traceability")
+@Path("/v1")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class TServiceEndpoints implements TService{
 	private static final Logger log = LogManager.getLogger(TServiceEndpoints.class);
 
-    @POST
-    @Path("/Training")
+    @GET
+    @Path("/milkQualityTraining")
     @Formatted
-	public Response training(@Context HttpServletRequest request, InputStream requestBody) {
+	public Response training() {
     	try {
     		log.debug("Training endpoint reached!");
-    		String jsonDataOutput = this.initDataAndSend(requestBody, "Training");
+    		String jsonDataOutput = this.initDataAndSend("Training");
     		return Response.ok(jsonDataOutput).build();
 		} catch (Exception e) {
 			log.error("An exception occured!",e);
@@ -122,13 +124,13 @@ public class TServiceEndpoints implements TService{
 		}
 	}
 
-    @POST
-    @Path("/Predictions")
+    @GET
+    @Path("/milkQualityPrediction")
     @Formatted
-	public Response prediction(@Context HttpServletRequest request, InputStream requestBody) throws IOException {
+	public Response prediction() {
     	try {
     		log.debug("Training endpoint reached!");
-    		String jsonDataOutput = this.initDataAndSend(requestBody, "Prediction");
+    		String jsonDataOutput = this.initDataAndSend("Prediction");
     		return Response.ok(jsonDataOutput).build();
 		} catch (Exception e) {
 			log.error("An exception occured!",e);
@@ -137,11 +139,60 @@ public class TServiceEndpoints implements TService{
 		}
 	}
     
-    private String initDataAndSend(InputStream requestBody, String operation) {
+    @POST
+    @Path("/milkQualityTraining")
+    @Formatted
+	public Response sendDatasetTraining(@Context HttpServletRequest request, InputStream requestBody) {
+    	try {
+    		log.debug("Send dataset training endpoint reached!");
+    		//this.readDataAndStore(requestBody,"Training");
+    		this.readDataAndSend(requestBody, "Training");
+    		return Response.ok("Data received successfully!").build();
+		} catch (Exception e) {
+			log.error("An exception occured!",e);
+			e.printStackTrace();
+			return Response.ok(e).build();
+		}
+	}
+    
+    @POST
+    @Path("/milkQualityPrediction")
+    @Formatted
+	public Response sendDatasetPrediction(@Context HttpServletRequest request, InputStream requestBody) {
+    	try {
+    		log.debug("Send dataset prediction endpoint reached!");
+    		//this.readDataAndStore(requestBody,"Prediction");
+    		this.readDataAndSend(requestBody, "Prediction");
+    		return Response.ok("Data received successfully!").build();
+		} catch (Exception e) {
+			log.error("An exception occured!",e);
+			e.printStackTrace();
+			return Response.ok(e).build();
+		}
+	}
+    
+    private String initDataAndSend(String operation) {
     	log.debug("Initializing input data.");
     	String jsonDataOutput = "";
+    	//String jsonDataInput = "";
+    	//PyModuleExecutor pyExe = new PyModuleExecutor();
+        log.debug("Initialization completed!");
+    	try {
+    		log.debug("Reading data...");
+    		//jsonDataInput = TDataManagement.readFromFile(operation);
+    		jsonDataOutput = TDataManagement.readFromFile(operation);
+	        //log.debug("Sending data to python executor class.");
+        	//jsonDataOutput = pyExe.executeFunction(jsonDataInput,operation);
+		} catch (Exception e) {
+			log.error("An exception occured!",e);
+			e.printStackTrace();
+		} 
+		return jsonDataOutput;
+    }
+    
+    private void readDataAndStore(InputStream requestBody,String operation) {
+    	log.debug("Init reading data and store method...");
     	String line;
-    	PyModuleExecutor pyExe = new PyModuleExecutor();
     	InputStreamReader inputStream = new InputStreamReader(requestBody);
 		BufferedReader reader = new BufferedReader(inputStream);
         StringBuilder jsonDataInput = new StringBuilder();
@@ -151,8 +202,8 @@ public class TServiceEndpoints implements TService{
 	        while ((line = reader.readLine()) != null) {
 	        	jsonDataInput.append(line);
 	        }
-	        log.debug("Sending data to python executor class.");
-        	jsonDataOutput = pyExe.executeFunction(jsonDataInput.toString(),operation);
+	        log.debug("Store dataset to file.");
+	        TDataManagement.storeToFile(jsonDataInput.toString(),operation);	        
 		} catch (IOException e) {
 			log.error("An exception occured!",e);
 			e.printStackTrace();
@@ -168,7 +219,43 @@ public class TServiceEndpoints implements TService{
     			}
     		}
     	}
-		return jsonDataOutput;
+    }
+    
+    private void readDataAndSend(InputStream requestBody,String operation) {
+    	log.debug("Init reading data and store method...");
+    	String jsonDataOutput = "";
+    	String line;
+    	PyModuleExecutor pyExe = new PyModuleExecutor();
+    	InputStreamReader inputStream = new InputStreamReader(requestBody);
+		BufferedReader reader = new BufferedReader(inputStream);
+        StringBuilder jsonDataInput = new StringBuilder();
+        log.debug("Initialization completed!");
+    	try {
+    		log.debug("Reading request body.");
+	        while ((line = reader.readLine()) != null) {
+	        	jsonDataInput.append(line);
+	        }
+	        //log.debug("Store dataset to file.");
+	        //AWDataManagement.storeToFile(jsonDataInput.toString(),operation);
+	        log.debug("Sending data to python executor class.");
+        	jsonDataOutput = pyExe.executeFunction(jsonDataInput.toString(),operation);
+        	log.debug("Store dataset to file.");
+	        TDataManagement.storeToFile(jsonDataOutput,operation);
+		} catch (IOException e) {
+			log.error("An exception occured!",e);
+			e.printStackTrace();
+		} finally {
+    		if (reader != null) {
+    			try {
+    				log.debug("Closing the reader.");
+    				reader.close();
+    			}
+    			catch (IOException e) {
+    				log.error("An exception occured!",e);
+    				e.printStackTrace();
+    			}
+    		}
+    	}
     }
 
 }

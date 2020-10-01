@@ -3,7 +3,7 @@ Estimate Milk Quality Module - Random Forest Training/Test
 
 Author: Luigi di Corrado
 Mail: luigi.dicorrado@eng.it
-Date: 23/09/2020
+Date: 01/10/2020
 Company: Engineering Ingegneria Informatica S.p.A.
 
 Introduction : This module is used to perform the training of the Random Forest algorithm,
@@ -88,7 +88,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
-from Logger import log
+from MQLogger import log
 
 class MilkQualityRandomForest:
     def measure(self, y_actual, y_predict):
@@ -128,7 +128,7 @@ class MilkQualityRandomForest:
         # MODEL SETTINGS
         ModelFolderPath = './models'
         PrefixModel = 'MilkQuality'
-        TraceabilityModelName = PrefixModel + '_TraceabilityModel'
+        TraceabilityModelName = PrefixModel + 'TraceabilityModel'
 
         # Estimate Milk Quality - Training and Testing
         with myLog.error_debug():
@@ -275,7 +275,7 @@ class MilkQualityRandomForest:
         modelsNotExists = False
         ModelFolderPath = './models'
         PrefixModel = 'MilkQuality'
-        TraceabilityModelName = PrefixModel + '_TraceabilityModel'
+        TraceabilityModelName = PrefixModel + 'TraceabilityModel'
         
         myLog.writeMessage('Preparing to execute Random Forest Predictions of Estimate Milk Quality ...',"INFO",functionName)
         # Estimate Animal Welfare Condition - Prediction

@@ -82,12 +82,14 @@ public class PyModuleExecutor {
         if (!PyLib.isPythonRunning()) {
         	log.debug("Preparing to configure Python modules path");
             List<String> extraPaths = Arrays.asList(
-                    "classpath:RandomForestModule.py",
-                    "classpath:Logger.py"
+                    "classpath:MQRandomForestModule.py",
+                    "classpath:MQLogger.py",
+                    "classpath:AWRandomForestModule.py",
+                    "classpath:AWLogger.py"
             );
             List<String> cleanedExtraPaths = new ArrayList<>(extraPaths.size());
 
-            Path tempDirectory = Files.createTempDirectory("lib-");
+            Path tempDirectory = Files.createTempDirectory("MQ-lib-");
             // This Hook is not working. Need another solution
             Runtime.getRuntime().addShutdownHook(new Thread(() -> FileSystemUtils.deleteRecursively(((java.nio.file.Path) tempDirectory).toFile())));
             cleanedExtraPaths.add(tempDirectory.toString());
@@ -122,7 +124,7 @@ public class PyModuleExecutor {
 			initInterpreter();
 			log.debug("Importing random forest module into interpreter.");
 			// Proxify the call to a python class.
-	        PyModule rfModule = PyModule.importModule("RandomForestModule");
+	        PyModule rfModule = PyModule.importModule("MQRandomForestModule");
 	        log.debug("Calling the random forest module class.");
 	        PyObject rfObject = rfModule.call("MilkQualityRandomForest");
 	        RFModulePlugin rfPlugIn = rfObject.createProxy(RFModulePlugin.class);
