@@ -33,8 +33,9 @@ The decision tree forms a structure, calculating the best questions to ask to ma
 | [RESTEasy API][7]                                | Java     | 3.12.1.Final     |
 | [Spring Framework][8]                            | Java     | 4.3.3.RELEASE    |
 | [Json][9]                                        |          | 20200518         |
-| [Eclipse IDE for Enterprise Java Developers][10] | Java     | 2020-06 (4.16.0) |
-| [PyDev Python IDE for Eclipse][11]               | Python   | 7.6.0            |
+| [Log4j][10]                                      |          | 2.13.3           |
+| [Eclipse IDE for Enterprise Java Developers][11] | Java     | 2020-06 (4.16.0) |
+| [PyDev Python IDE for Eclipse][12]               | Python   | 7.6.0            |
 
 [1]: https://www.oracle.com/it/java/technologies/javase/javase-jdk8-downloads.html
 [2]: https://www.python.org/downloads/release/python-383/
@@ -45,8 +46,9 @@ The decision tree forms a structure, calculating the best questions to ask to ma
 [7]: https://resteasy.github.io/ 
 [8]: https://spring.io/projects/spring-framework
 [9]: http://www.JSON.org/
-[10]: https://www.eclipse.org/downloads/ 
-[11]: http://www.pydev.org/ 
+[10]: https://logging.apache.org/log4j/2.x/
+[11]: https://www.eclipse.org/downloads/ 
+[12]: http://www.pydev.org/ 
 
 ## Requirements
 
@@ -68,11 +70,17 @@ Return an object with the _training result_ that will show all the test records 
 Receive a dataset of _prediction features_ as input to perform predictions and return an object with the _prediction result_. 
 
 ## Endpoints
+The base URL is composed like:
+http://[HOST]:[PORT]/EstimateMilkQualityModule/ENDPOINT
 
-| URL                           | Type     | Used for                                         | Input                                | Output                                                  |
-| :---------------------------- | :------: | :----------------------------------------------- | :----------------------------------- | :------------------------------------------------------ |
-| **/traceability/Traininig**   | **POST** | Train the algorithm and calculate the metrics    | Dataset with actual milk quality     | Object with test predicted quality and metrics          |
-| **/traceability/Predictions** | **POST** | Estimate the quality for raw and processed milk  | Dataset with data to be processed    | Object with predicted quality condition                 |
+This table lists all the endpoint information
+
+| URL                            | Type     | Used for                                                                  | Input                              | Output                                            |
+| :----------------------------- | :------: | :------------------------------------------------------------------------ | :--------------------------------- | :------------------------------------------------ |
+| **/v1/traceabilityTraininig**  | **POST** | Train the algorithm, calculate the metrics and store the result data      | Json data with actual milk quality | A simple message with info about the process      |
+| **/v1/traceabilityTraininig**  | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with test predicted quality and metrics |
+| **/v1/traceabilityPrediction** | **POST** | Estimate the quality for raw and processed milk and store the result data | Json data to be processed          | A simple message with info about the process      |
+| **/v1/traceabilityPrediction** | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with predicted quality condition        |
 
 ## How to use
 **TO DO**
