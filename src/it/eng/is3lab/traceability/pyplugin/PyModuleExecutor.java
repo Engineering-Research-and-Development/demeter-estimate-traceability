@@ -45,7 +45,6 @@
 
 package it.eng.is3lab.traceability.pyplugin;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,16 +64,23 @@ import org.jpy.PyModule;
 import org.jpy.PyObject;
 import org.json.JSONObject;
 import org.springframework.util.FileSystemUtils;
-import org.springframework.util.ResourceUtils;
 
 public class PyModuleExecutor {
 	private static final Logger log = LogManager.getLogger(PyModuleExecutor.class);
+	private static ResourceBundle configuration = ResourceBundle.getBundle("resources/serviceConf");
+	private static String pyModulesRoot = configuration.getString("milkquality.pyModuleExecutor.pyModulesRoot");
+	private static String pyModulesUtilities = configuration.getString("milkquality.pyModuleExecutor.pyModulesUtilities");
+	private static String jpyConfigPath = configuration.getString("milkquality.pyModuleExecutor.jpyConfigPath");
+	// Load Python Modules Paths
+	private static String MQRandomForestModule = configuration.getString("milkquality.pyModuleExecutor.AWRandomForestModule");
+	private static String MQLogger = configuration.getString("milkquality.pyModuleExecutor.AWLogger");
 
 	private static void initInterpreter() throws Exception {
 		log.debug("Initialize Python Interpreter");
 		log.debug("Loading jpy configuration");
         Properties properties = new Properties();
-        properties.load(new FileInputStream(ResourceUtils.getFile("classpath:jpyconfig.properties")));
+        InputStream jpyconfig = PyModuleExecutor.class.getClassLoader().getResourceAsStream(jpyConfigPath);
+        properties.load(jpyconfig);
         properties.forEach((k, v) -> {
         	log.debug("Setting: "+(String) k+" Value: "+(String) v);
         	System.setProperty((String) k, (String) v);
@@ -82,35 +89,34 @@ public class PyModuleExecutor {
         if (!PyLib.isPythonRunning()) {
         	log.debug("Preparing to configure Python modules path");
             List<String> extraPaths = Arrays.asList(
-                    "classpath:MQRandomForestModule.py",
-                    "classpath:MQLogger.py",
-                    "classpath:AWRandomForestModule.py",
-                    "classpath:AWLogger.py"
+                    MQRandomForestModule,
+                    MQLogger
             );
             List<String> cleanedExtraPaths = new ArrayList<>(extraPaths.size());
 
-            Path tempDirectory = Files.createTempDirectory("MQ-lib-");
-            // This Hook is not working. Need another solution
+            Path tempDirectory = Files.createTempDirectory("MilkQuality-PyMod-");
             Runtime.getRuntime().addShutdownHook(new Thread(() -> FileSystemUtils.deleteRecursively(((java.nio.file.Path) tempDirectory).toFile())));
             cleanedExtraPaths.add(tempDirectory.toString());
             log.debug("Created temporary directory: "+tempDirectory.toString());
 
             extraPaths.forEach(lib -> {
-                if (lib.startsWith("classpath:")) {
-                    try {
-                        String finalLib = lib.replace("classpath:", "");
-                        log.debug("Copying python module: "+finalLib);
-                        java.nio.file.Path target = Paths.get(tempDirectory.toString(), finalLib);
-                        try (InputStream stream = PyModuleExecutor.class.getClassLoader().getResourceAsStream(finalLib)) {
-                            Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
-                        }
-                    } catch (Exception e) {
-                    	log.error("An exception occured!",e);
-                        e.printStackTrace();
-                    }
-                } else {
-                	log.debug("Loading python module: "+lib);
-                    cleanedExtraPaths.add(lib);
+                try {
+                	String finalLib = "";
+                	InputStream stream = PyModuleExecutor.class.getClassLoader().getResourceAsStream(lib);
+                	if (lib.startsWith(pyModulesUtilities)) {
+                		finalLib = lib.replace(pyModulesUtilities, "");
+                	}
+                	else {
+                		finalLib = lib.replace(pyModulesRoot, "");
+                	}
+                    log.debug("Copying python module: "+finalLib);
+                    java.nio.file.Path target = Paths.get(tempDirectory.toString(), finalLib);
+
+                    Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
+
+                } catch (Exception e) {
+                	log.error("An exception occured!",e);
+                    e.printStackTrace();
                 }
             });
             log.debug("Python interpreter configured!");
@@ -122,18 +128,28 @@ public class PyModuleExecutor {
 		String jsonDataResult = "";
 		try {
 			initInterpreter();
+			RFConfigurator rfConf = new RFConfigurator();
+        	rfConf.loadConfiguration();
+        	String configFilePath = rfConf.getConfigFilePath();
+        	String workDir = rfConf.getWorkDir();
 			log.debug("Importing random forest module into interpreter.");
 			// Proxify the call to a python class.
 	        PyModule rfModule = PyModule.importModule("MQRandomForestModule");
 	        log.debug("Calling the random forest module class.");
 	        PyObject rfObject = rfModule.call("MilkQualityRandomForest");
 	        RFModulePlugin rfPlugIn = rfObject.createProxy(RFModulePlugin.class);
+	        log.debug("Initialize random forest module configuration");
+	        log.debug("Random Forest configuration file path: "+configFilePath);
+	        log.debug("Working directory: "+workDir);
+	        rfPlugIn.initConfiguration(configFilePath, workDir);
 	        // Execute the python function.
 	        switch(operation) 
 	        { 
 	            case "Training": 
 	            	log.debug("TRAINING: Executing training function.");
-	            	jsonDataResult = rfPlugIn.execRFTraining(jsonData);
+	            	int rs = rfConf.getRandomState();
+	            	int est = rfConf.getEstimators();
+	            	jsonDataResult = rfPlugIn.execRFTraining(jsonData,rs,est);
 	                break; 
 	            case "Prediction": 
 	            	log.debug("PREDICTION: Executing prediction function.");
@@ -144,8 +160,8 @@ public class PyModuleExecutor {
 			log.error("An exception occured!",e);
 			e.printStackTrace();
 		} finally {
-			log.debug("Stopping python interpreter.");
-	        PyLib.stopPython();
+			//log.debug("Stopping python interpreter.");
+	        //PyLib.stopPython(); Bugged
 	        
 			if (jsonDataResult == "") {
         		log.error("Output data is empty! An error occured while executing python module."

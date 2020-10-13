@@ -3,7 +3,7 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 21/09/2020
+ * Date: 12/10/2020
  * Company: Engineering Ingegneria Informatica S.p.A.
  */
 
@@ -25,5 +25,7 @@ public interface TService {
 	public Response sendDatasetTraining(@Context HttpServletRequest request, InputStream requestBody) throws IOException;
 	
 	public Response sendDatasetPrediction(@Context HttpServletRequest request, InputStream requestBody) throws IOException;
+	
+	public Response configAndSendDatasetTraining(@Context HttpServletRequest request, int randomstate, int estimators, InputStream requestBody) throws IOException;
 
 }

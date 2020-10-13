@@ -14,8 +14,9 @@ package it.eng.is3lab.traceability.pyplugin;
 
 public interface RFModulePlugin {
 	
-	public String execRFTraining(String jsonData);
+	public String execRFTraining(String jsonData,int randomState,int estimatorsNumbers);
 	
 	public String execRFPrediction(String jsonData);
 	
+	public void initConfiguration(String confFile,String workpath);
 }

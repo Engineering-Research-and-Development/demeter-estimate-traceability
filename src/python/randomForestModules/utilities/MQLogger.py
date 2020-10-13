@@ -3,7 +3,7 @@ Custom logger module
 
 Author: Luigi di Corrado
 Mail: luigi.dicorrado@eng.it
-Date: 18/09/2020
+Date: 12/10/2020
 Company: Engineering Ingegneria Informatica S.p.A.
 
 Introduction : This logger is used to track the execution of Random Forest modules, 
@@ -15,6 +15,16 @@ Introduction : This logger is used to track the execution of Random Forest modul
                By default the logger level is set to "DEBUG", that will keep trace of all the message.
                When the application goes on production, just change the loggerLevel variable to "ERROR"
                that will set te logger to keep trace only of "ERROR" and "FATAL" messages.
+
+
+
+Function     : initConfiguration
+
+Description  : Initialize the settings
+               
+Parameters   : string     confFile      contains the path to rfConf.properties to load
+               
+Return       : 
 
 
 
@@ -40,9 +50,6 @@ Function     : writeMessage
 
 Description  : Write the given message and other infos into a log file
 
-               Default filename is: animal_welfare.log
-               Default folder path: ./logs
-               
                The message structure is composed by:
                [DATE WITH TIMESTAMP] [STATUS LEVEL] [FUNCTION NAME] MESSAGE
                
@@ -135,11 +142,17 @@ import os
 import inspect
 import sys
 import traceback
+import configparser
 from contextlib import contextmanager
 
 class log:
     def __init__(self):
-        self.loggerLevel = "DEBUG"
+        self.config = configparser.ConfigParser()
+
+        self.loggerLevel = ''
+        self.folder = ''
+        self.filename = ''
+        self.fullpath = ''
         self.statusCodes = {
             "DEBUG":0,
             "INFO":1,
@@ -147,6 +160,13 @@ class log:
             "ERROR":3,
             "FATAL":4
         }
+    
+    def initConfiguration(self, confFile):
+        self.config.read(confFile)
+        self.loggerLevel = self.config.get('PyLogger', 'milkquality.logger.level')
+        self.folder = self.config.get('PyLogger', 'milkquality.logger.filePath')
+        self.filename = self.config.get('PyLogger', 'milkquality.logger.fileName')
+        self.fullpath = self.folder + '/' + self.filename
 
     def __getStatusLevel(self, code):
         status = self.statusCodes.get(code)
@@ -160,21 +180,18 @@ class log:
             statusLevel = "DEBUG"
             messageLevel = self.__getStatusLevel(statusLevel)
         currentLoggerLevel = self.__getStatusLevel(self.loggerLevel)
-        folder = './logs'
-        filename = 'AWRandomForest.log'
-        fullpath = folder + '/' + filename
         try:
             # Check if directory exists, or create it
-            os.makedirs(folder)
+            os.makedirs(self.folder)
         except FileExistsError:
             # Directory already exists
             pass
-        if os.path.exists(fullpath):
+        if os.path.exists(self.fullpath):
             append_write = 'a'  # append
         else:
             append_write = 'w'  # new file
 
-        log = open(fullpath, append_write)
+        log = open(self.fullpath, append_write)
         try:
             if messageLevel >= currentLoggerLevel :
                 log.write('[' + dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + ']    {0:13} {1:20} {2} \n'.format('['+statusLevel+']','['+functionName+']',message))

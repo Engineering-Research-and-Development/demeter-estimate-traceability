@@ -25,11 +25,11 @@ The decision tree forms a structure, calculating the best questions to ask to ma
 | Description                                      | Language | Version          |
 | :----------------------------------------------  | :------: | :--------------: |
 | [Java SE Development Kit 8][1]                   | Java     | 1.8.0_251        |
-| [Python 3][2]                                    | Python   | 3.8.3            |
+| [Python 3][2]                                    | Python   | 3.7.3            |
 | [Apache Maven 3][3]                              |          | 3.6.3            |
 | [Apache Tomcat 7][4]                             |          | 7.0.104          |
-| [Scikit-learn API][5]                            | Python   | 0.23.1           |
-| [JPY API][6]                                     | Java     | 0.10.SNAPSHOT    |
+| [Scikit-learn API][5]                            | Python   | 0.23.2           |
+| [JPY API][6]                                     | Java     | 0.9.0		     |
 | [RESTEasy API][7]                                | Java     | 3.12.1.Final     |
 | [Spring Framework][8]                            | Java     | 4.3.3.RELEASE    |
 | [Json][9]                                        |          | 20200518         |
@@ -73,14 +73,34 @@ Receive a dataset of _prediction features_ as input to perform predictions and r
 The base URL is composed like:
 http://[HOST]:[PORT]/EstimateMilkQualityModule/ENDPOINT
 
-This table lists all the endpoint information
+Headers settings:
+
+| Key          | Value            |
+| :----------- | :--------------- |
+| Content-Type | application/json |
+| Accept       | application/json |
+
+Endpoint informations:
 
 | URL                            | Type     | Used for                                                                  | Input                              | Output                                            |
 | :----------------------------- | :------: | :------------------------------------------------------------------------ | :--------------------------------- | :------------------------------------------------ |
-| **/v1/traceabilityTraininig**  | **POST** | Train the algorithm, calculate the metrics and store the result data      | Json data with actual milk quality | A simple message with info about the process      |
-| **/v1/traceabilityTraininig**  | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with test predicted quality and metrics |
-| **/v1/traceabilityPrediction** | **POST** | Estimate the quality for raw and processed milk and store the result data | Json data to be processed          | A simple message with info about the process      |
-| **/v1/traceabilityPrediction** | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with predicted quality condition        |
+| **/v1/milkQualityTraininig**   | **POST** | Train the algorithm, calculate the metrics and store the result data      | Json data with actual milk quality | A simple message with info about the process      |
+| **/v1/milkQualityTraininig**   | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with test predicted quality and metrics |
+| **/v1/milkQualityPrediction**  | **POST** | Estimate the quality for raw and processed milk and store the result data | Json data to be processed          | A simple message with info about the process      |
+| **/v1/milkQualityPrediction**  | **GET**  | Retrieve the training result data that was stored                         |                                    | Json data with predicted quality condition        |
+
+The **/v1/milkQualityTraininig** endpoint can be used also to change the **random state** and **estimators** parameters of the algorithm.
+To accomplish that, just add the following path parameters to the URL:
+
+* **/randomstate/value**
+
+* **/estimators/value**	
+
+Both values must be **integers** numbers.
+
+For instance: 
+**http://localhost:9080/EstimateMilkQualityModule/v1/milkQualityTraininig/randomstate/42/estimators/100**
+This endpoint will first change the values of random state and estimators parameters and then execute the training.
 
 ## How to use
 **TO DO**
