@@ -182,8 +182,8 @@ import it.eng.is3lab.traceability.pyplugin.RFConfigurator;
 import it.eng.is3lab.traceability.pyplugin.PyModuleExecutor;
 
 @Path("/v1")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON+";charset=UTF-8")
+@Produces(MediaType.APPLICATION_JSON+";charset=UTF-8")
 public class TServiceEndpoints implements TService{
 	private static final Logger log = LogManager.getLogger(TServiceEndpoints.class);
 
