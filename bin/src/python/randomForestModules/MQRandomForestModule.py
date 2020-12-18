@@ -3,7 +3,7 @@ Estimate Milk Quality Module - Random Forest Training/Test
 
 Author: Luigi di Corrado
 Mail: luigi.dicorrado@eng.it
-Date: 18/12/2020
+Date: 12/10/2020
 Company: Engineering Ingegneria Informatica S.p.A.
 
 Introduction : This module is used to perform the training of the Random Forest algorithm,
@@ -25,7 +25,7 @@ Return       :
 
 
 
-Function     : measure
+Function     : measure (TP, FP, TN, FN, MFPR, MTPR, MPPV, MACC)
 
 Description  : Execute the calculation of the following metrics data
                TP    - True Positive
@@ -51,45 +51,39 @@ Return       : float TP
 
 
 
-Function     : getDataFromTraslator
-
-Description  : Retrieve the input data in AIM format from AIM Traslator service
-               
-Parameters   : str     url      AIM Traslator endpoint URL
-               
-Return       : dataset dataframe
-
-
-
 Function     : execRFTraining
 
-Description  : Converts the AIM input into a dataframe object, then process the data and start the training phase 
+Description  : Converts the JSON input into a dataframe object, then process the data and start the training phase 
                for Random Forest algorithm.
                The data is splitted using 80% of the rows for Training and 20% for Testing.
                The random state "rs" argument is used to provide randomic rows while splitting the data.
                Once the training is complete a test prediction is executed on the dedicated rows and the
                models are saved into the configured folder.
-               The metrics are calculated using accuracy_score, precision_score and measure functions.
-               All the tested data and metrics are put together into the same Dataset
-               and next converted into a CSV String and sent to AIM Traslator service.
-               The response received will contain the AIM format of the output.
+               The metrics are calculated using the measure function.
+               All the tested data and metrics are returned as output using JSON format.
+               The JSON output contains the following roots:
+                   - rawData           Contains data about RAW milk
+                   - processedData     Contains data about PROCESSED milk
+                   - metricsData       Contains all the metrics data of the algorithm
                
-Parameters   : str   url                - String that contains AIM Traslator endpoint URL
+Parameters   : str   JsonData           - String that contains the JSON data to be processed
                int   randomState        - Random state value for test phase, it choose random rows
                int   estimatorsNumbers  - Numbers of estimators to use on training phase
                
-Return       : str   jsonResult   - String that contains all the AIM data to output
+Return       : str   jsonResult   - String that contains all the JSON data to output
 
 
 
 Function     : execRFPrediction
 
-Description  : Converts the AIM input into a dataframe object, then process the data
+Description  : Converts the JSON input into a dataframe object, then process the data
                and load the models before start the prediction using Random Forest.
-               At the end of the process, the output data is converted into a
-               CSV String and sent to AIM Traslator service.                
+               At the end of the process, the output data is converted into JSON.
+               The JSON output contains the following roots:
+                   - rawData           Contains data about RAW milk
+                   - processedData     Contains data about PROCESSED milk
                
-Parameters   : str   url          - String that contains AIM Traslator endpoint URL
+Parameters   : str   JsonData     - String that contains the JSON data to be processed
                
 Return       : str   jsonResult   - String that contains all the JSON data to output
 
@@ -103,7 +97,6 @@ import sys
 import os
 import json
 import configparser
-import requests
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
@@ -147,71 +140,7 @@ class MilkQualityRandomForest:
 
         return(TP, FP, TN, FN, MFPR, MTPR, MPPV, MACC)
 
-    def getDataFromTraslator(self, url):
-        functionName = sys._getframe().f_code.co_name
-        self.myLog.writeMessage('Send request to: '+url,"DEBUG",functionName)
-        resp = requests.post(url)
-        self.myLog.writeMessage('Response received!',"DEBUG",functionName)
-        try:
-          # Json validation on loading
-          myAIM = json.loads(resp.text)
-        except:
-          self.myLog.writeMessage('Exception! Invalid Json ...', "ERROR",functionName)
-          self.myLog.writeMessage('Response BODY Content: '+resp.text, "ERROR",functionName)
-          raise
-        myGraph = myAIM['@graph']
-        cols = ['Date','Time','Product Name','AciditySH','Casein','Density','Fat',
-                'Freezing Point mC','Lactose','Protein','SNF','Urea','Remark','Actual Quality','Predicted Quality']
-        rows = []
-        
-        # Start the count at 1, because the @graph[0] element refer to metrics data storage.
-        count = 1
-        while count < len(myGraph):
-            productName = myGraph[count]['productName']
-            remark = myGraph[count]['productType']
-            date = myGraph[count+1]['resultTime']
-            time = myGraph[count+1]['resultTime']
-            acidity = myGraph[count+2]['hasResult']['numericValue']
-            casein = myGraph[count+3]['hasResult']['numericValue']
-            density = myGraph[count+4]['hasResult']['numericValue']
-            fat = myGraph[count+5]['hasResult']['numericValue']
-            protein = myGraph[count+6]['hasResult']['numericValue']
-            freezingPoint = myGraph[count+7]['hasResult']['numericValue']
-            lactose = myGraph[count+8]['hasResult']['numericValue']
-            snf = myGraph[count+9]['hasResult']['numericValue']
-            urea = myGraph[count+10]['hasResult']['numericValue']
-
-            if '#qualityValue-High' in myGraph[count+11]['hasResult']['@id']:
-              actualQuality = 'High'
-            elif '#qualityValue-Medium' in myGraph[count+11]['hasResult']['@id']:
-              actualQuality = 'Medium'
-            elif '#qualityValue-Low' in myGraph[count+11]['hasResult']['@id']:
-              actualQuality = 'Low'
-            else:
-              actualQuality = ''
-            
-            if '#qualityValue-High' in myGraph[count+12]['hasResult']['@id']:
-              predictedQuality = 'High'
-            elif '#qualityValue-Medium' in myGraph[count+12]['hasResult']['@id']:
-              predictedQuality = 'Medium'
-            elif '#qualityValue-Low' in myGraph[count+12]['hasResult']['@id']:
-              predictedQuality = 'Low'
-            else:
-              predictedQuality = ''
-
-
-        
-            rows.append([date,time,productName,acidity,casein,density,fat,freezingPoint,lactose,protein,snf,
-                         urea,remark,actualQuality,predictedQuality])
-            
-            # Each record takes 13 elements to store each data that will be used by Random Forest
-            count += 13 
-        
-        dataframe = pd.DataFrame(rows, columns=cols)
-        dataframe = dataframe.apply(pd.to_numeric,errors='ignore')
-        return dataframe
-    
-    def execRFTraining(self, url, randomState, estimatorsNumbers):        
+    def execRFTraining(self, JsonData, randomState, estimatorsNumbers):        
         # GET FUNCTION NAME
         functionName = sys._getframe().f_code.co_name
         # Estimate Milk Quality - Training and Testing
@@ -229,8 +158,6 @@ class MilkQualityRandomForest:
                 #estimators = int(config.get('PyRandomForest', 'milkquality.randomForest.trainingSettings.estimators'))
                 estimators = estimatorsNumbers
                 self.myLog.writeMessage("Estimators set at: "+str(estimators),"DEBUG",functionName)
-                DataFolderPath = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.datafilePath')
-                csvFileName = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.csvFileName')
         
                 # MODEL SETTINGS
                 ModelFolderPath = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.modelfilePath')
@@ -255,10 +182,9 @@ class MilkQualityRandomForest:
                 
                 # Dataset preparation
                 self.myLog.writeMessage('Loading dataset ...',"DEBUG",functionName)
-                #JsonObj = json.loads(JsonData)
-                #dataframe = pd.DataFrame(JsonObj)
-                dataframe= self.getDataFromTraslator(url)
-
+                JsonObj = json.loads(JsonData)
+                dataframe = pd.DataFrame(JsonObj)
+                #dataframe = dataframe.set_index('Index')
                 cols = ['AciditySH', 'Casein','Density', 'Fat', 'Freezing Point mC', 'Lactose',
                         'Protein', 'SNF', 'Urea', 'Actual Quality']
                 dataset = dataframe[cols]
@@ -330,73 +256,43 @@ class MilkQualityRandomForest:
                 Raw_TP, Raw_FP, Raw_TN, Raw_FN, Raw_FPR, Raw_TPR, RawPrecision, RawAccuracy = self.measure(Raw_y_test, Raw_y_pred)
                 Processed_TP, Processed_FP, Processed_TN, Processed_FN, Processed_FPR, Processed_TPR, ProcessedPrecision, ProcessedAccuracy = self.measure(Processed_y_test, Processed_y_pred)
 
-                metricsDict = {'rawTruePositiveRate': [Raw_TPR], 'rawFalsePositiveRate': [Raw_FPR], 
-                      'rawPrecision': [RawPrecision], 'rawAccuracy': [RawAccuracy],
-                      'processedTruePositiveRate': [Processed_TPR], 'processedFalsePositiveRate': [Processed_FPR], 
-                      'processedPrecision': [ProcessedPrecision], 'processedAccuracy': [ProcessedAccuracy]}
+                metricsDict = {'RAW_TRUE_POSITIVE_RATE': [Raw_TPR], 'RAW_FALSE_POSITIVE_RATE': [Raw_FPR], 
+                      'RAW_PRECISION': [RawPrecision], 'RAW_ACCURACY': [RawAccuracy],
+                      'PROCESSED_TRUE_POSITIVE_RATE': [Processed_TPR], 'PROCESSED_FALSE_POSITIVE_RATE': [Processed_FPR], 
+                      'PROCESSED_PRECISION': [ProcessedPrecision], 'PROCESSED_ACCURACY': [ProcessedAccuracy]}
                 
                 dsMetrics = pd.DataFrame(metricsDict)
                 self.myLog.writeMessage('Metrics calculations completed!',"DEBUG",functionName)
-                
-                # Convert dataset predictions to AIM using traslator service
-                self.myLog.writeMessage('Converting output datasets to AIM ...',"DEBUG",functionName)
-                dsRaw = pd.concat([dsRaw,dsProcessed])   
-                dsRaw = dsRaw.reset_index()
-                dsMetrics = dsMetrics.reset_index()
-                dsRaw = pd.concat([dsRaw,dsMetrics],axis=1, sort=False)
-                dsRaw = dsRaw.drop(columns=['index'])
-                self.myLog.writeMessage('Creating CSV file: '+DataFolderPath+'/'+csvFileName,"DEBUG",functionName)
-                csvDataset = dsRaw.to_csv(DataFolderPath+'/'+csvFileName, sep=';', index=False)
-                
-                self.myLog.writeMessage('Converting CSV to String...',"DEBUG",functionName) 
-                with open(DataFolderPath+'/'+csvFileName) as csvFile:
-                  csvContent = csvFile.read()
-                self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)
-                
-                self.myLog.writeMessage('Send request to: '+url,"DEBUG",functionName)
-                resp = requests.post(url,data = csvContent)
-                jsonDataset = resp.text
-                
-                self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
-                jsonDataset_decoded = json.loads(jsonDataset)
 
                 # Convert dataset predictions to json using records orientation
-                #self.myLog.writeMessage('Converting output datasets to JSON ...',"DEBUG",functionName)
+                self.myLog.writeMessage('Converting output datasets to JSON ...',"DEBUG",functionName)
                 #jsonDataset = df_result.to_json(orient='records')
-                #jsonDsRaw = dsRaw.to_json(orient='records')
-                #jsonDsProcessed = dsProcessed.to_json(orient='records')
-                #jsonMetrics = dsMetrics.to_json(orient='records')
-                #self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)  
+                jsonDsRaw = dsRaw.to_json(orient='records')
+                jsonDsProcessed = dsProcessed.to_json(orient='records')
+                jsonMetrics = dsMetrics.to_json(orient='records')
+                self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)  
 
                 # Decode the json data created to insert a custom root element
-                #self.myLog.writeMessage('Adding roots to JSON ...',"DEBUG",functionName)
+                self.myLog.writeMessage('Adding roots to JSON ...',"DEBUG",functionName)
                 #jsonDataset_decoded = json.loads(jsonDataset)
                 #jsonDataset_decoded = {'milkData': jsonDataset_decoded}
-                #jsonDsRaw_decoded = json.loads(jsonDsRaw)
-                #jsonDsRaw_decoded = {'rawData': jsonDsRaw_decoded}
-                #jsonDsProcessed_decoded = json.loads(jsonDsProcessed)
-                #jsonDsProcessed_decoded = {'processedData': jsonDsProcessed_decoded}
-                #jsonMetrics_decoded = json.loads(jsonMetrics)
-                #jsonMetrics_decoded = {'metricsData': jsonMetrics_decoded}
-                #self.myLog.writeMessage('Roots successfully added!',"DEBUG",functionName)
+                jsonDsRaw_decoded = json.loads(jsonDsRaw)
+                jsonDsRaw_decoded = {'rawData': jsonDsRaw_decoded}
+                jsonDsProcessed_decoded = json.loads(jsonDsProcessed)
+                jsonDsProcessed_decoded = {'processedData': jsonDsProcessed_decoded}
+                jsonMetrics_decoded = json.loads(jsonMetrics)
+                jsonMetrics_decoded = {'metricsData': jsonMetrics_decoded}
+                self.myLog.writeMessage('Roots successfully added!',"DEBUG",functionName)
 
                 # Decode json that contains metrics element and update the prediction json
-                #self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
+                self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
                 #jsonDataset_decoded.update(jsonMetrics_decoded)
-                #jsonDsRaw_decoded.update(jsonDsProcessed_decoded)
-                #jsonDsRaw_decoded.update(jsonMetrics_decoded)
+                jsonDsRaw_decoded.update(jsonDsProcessed_decoded)
+                jsonDsRaw_decoded.update(jsonMetrics_decoded)
 
-                #jsonResult = json.dumps(jsonDsRaw_decoded, indent=4, sort_keys=False)
-                jsonResult = json.dumps(jsonDataset_decoded, indent=4, sort_keys=False)
+                #jsonResult = json.dumps(jsonDataset_decoded, indent=4, sort_keys=False)
+                jsonResult = json.dumps(jsonDsRaw_decoded, indent=4, sort_keys=False)
                 self.myLog.writeMessage('JSON output successfully processed!',"DEBUG",functionName)
-                
-                self.myLog.writeMessage('Removing useless files ...',"DEBUG",functionName)
-                if os.path.exists(DataFolderPath+'/'+csvFileName):
-                  os.remove(DataFolderPath+'/'+csvFileName)
-                else:
-                  self.myLog.writeMessage('The file '+DataFolderPath+'/'+csvFileName+' does not exists!',"DEBUG",functionName)
-                self.myLog.writeMessage('Removing useless files successfully completed!',"DEBUG",functionName)
-                
                 self.myLog.writeMessage('Estimate Milk Quality training and test completed!',"INFO",functionName)
                 self.myLog.writeMessage('==============================================================',"INFO",functionName)
                 return jsonResult
@@ -404,7 +300,7 @@ class MilkQualityRandomForest:
                 self.myLog.writeMessage('An exception occured!', "ERROR",functionName)
                 raise
 
-    def execRFPrediction(self, url):
+    def execRFPrediction(self, JsonData):
         # GET FUNCTION NAME
         functionName = sys._getframe().f_code.co_name
         
@@ -423,8 +319,6 @@ class MilkQualityRandomForest:
                 PrefixModel = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.modelNamePrefix')
                 self.myLog.writeMessage("Model name prefix set at: "+PrefixModel,"DEBUG",functionName)
                 TraceabilityModelName = PrefixModel + 'Model'
-                DataFolderPath = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.datafilePath')
-                csvFileName = self.config.get('PyRandomForest', 'milkquality.randomForest.commonSettings.csvFileName')
                 
                 self.myLog.writeMessage('Preparing to execute Random Forest Predictions of Estimate Milk Quality ...',"INFO",functionName)
                 # Estimate Animal Welfare Condition - Prediction
@@ -466,9 +360,8 @@ class MilkQualityRandomForest:
                 if not(modelsNotExists):
                     # Dataset preparation
                     self.myLog.writeMessage('Loading dataset ...',"DEBUG",functionName)
-                    #JsonObj = json.loads(JsonData)
-                    #dataframe = pd.DataFrame(JsonObj)
-                    dataframe= self.getDataFromTraslator(url)
+                    JsonObj = json.loads(JsonData)
+                    dataframe = pd.DataFrame(JsonObj)
 
                     cols = ['AciditySH', 'Casein','Density', 'Fat', 'Freezing Point mC', 'Lactose',
                     'Protein', 'SNF', 'Urea']
@@ -491,59 +384,34 @@ class MilkQualityRandomForest:
                     dataframe['Density'] = [float('%.3f' % val) for val in dataframe['Density']]
                     
                     # Extracting data for RAW and PROCESSED
-                    #dsRaw = dataframe[dataframe['Remark']=='Raw']
-                    #dsProcessed = dataframe[dataframe['Remark']=='Processed']
+                    dsRaw = dataframe[dataframe['Remark']=='Raw']
+                    dsProcessed = dataframe[dataframe['Remark']=='Processed']
                     
                     self.myLog.writeMessage('Output preparation completed!',"DEBUG",functionName)
                     
-                    # Convert dataset predictions to AIM using traslator service
-                    self.myLog.writeMessage('Converting output datasets to AIM ...',"DEBUG",functionName)
-                
-                    # Convert dataset predictions to CSV
-                    self.myLog.writeMessage('Creating CSV file: '+DataFolderPath+'/'+csvFileName,"DEBUG",functionName)
-                    csvDataset = dataframe.to_csv(DataFolderPath+'/'+csvFileName, sep=';', index=False)
-                    
-                    self.myLog.writeMessage('Converting CSV to String...',"DEBUG",functionName) 
-                    with open(DataFolderPath+'/'+csvFileName) as csvFile:
-                      csvContent = csvFile.read()
-                    self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)
-                    
-                    self.myLog.writeMessage('Send request to: '+url,"DEBUG",functionName)
-                    resp = requests.post(url,data = csvContent)
-                    jsonDataset = resp.text
-                    
                     # Convert dataset predictions to json using records orientation
-                    #self.myLog.writeMessage('Converting output dataset to JSON ...',"DEBUG",functionName)
-                    self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
+                    self.myLog.writeMessage('Converting output dataset to JSON ...',"DEBUG",functionName)
                     #jsonDataset = dataframe.to_json(orient='records')
-                    #jsonDsRaw = dsRaw.to_json(orient='records')
-                    #jsonDsProcessed = dsProcessed.to_json(orient='records')
-                    #self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)  
+                    jsonDsRaw = dsRaw.to_json(orient='records')
+                    jsonDsProcessed = dsProcessed.to_json(orient='records')
+                    self.myLog.writeMessage('Conversion completed!',"DEBUG",functionName)  
 
                     # Decode the json data created to insert a custom root element
-                    #self.myLog.writeMessage('Adding roots to JSON ...',"DEBUG",functionName)
-                    jsonDataset_decoded = json.loads(jsonDataset)
+                    self.myLog.writeMessage('Adding roots to JSON ...',"DEBUG",functionName)
+                    #jsonDataset_decoded = json.loads(jsonDataset)
                     #jsonDataset_decoded = {'milkData': jsonDataset_decoded}
-                    #jsonDsRaw_decoded = json.loads(jsonDsRaw)
-                    #jsonDsRaw_decoded = {'rawData': jsonDsRaw_decoded}
-                    #jsonDsProcessed_decoded = json.loads(jsonDsProcessed)
-                    #jsonDsProcessed_decoded = {'processedData': jsonDsProcessed_decoded}
-                    #self.myLog.writeMessage('Roots successfully added!',"DEBUG",functionName)
+                    jsonDsRaw_decoded = json.loads(jsonDsRaw)
+                    jsonDsRaw_decoded = {'rawData': jsonDsRaw_decoded}
+                    jsonDsProcessed_decoded = json.loads(jsonDsProcessed)
+                    jsonDsProcessed_decoded = {'processedData': jsonDsProcessed_decoded}
+                    self.myLog.writeMessage('Roots successfully added!',"DEBUG",functionName)
                     
                     # Process JSON output
-                    #self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
-                    #jsonDsRaw_decoded.update(jsonDsProcessed_decoded)
-                    #jsonResult = json.dumps(jsonDsRaw_decoded, indent=4, sort_keys=False)
-                    jsonResult = json.dumps(jsonDataset_decoded, indent=4, sort_keys=False)
+                    self.myLog.writeMessage('Processing JSON output ...',"DEBUG",functionName)
+                    jsonDsRaw_decoded.update(jsonDsProcessed_decoded)
+                    #jsonResult = json.dumps(jsonDataset_decoded, indent=4, sort_keys=False)
+                    jsonResult = json.dumps(jsonDsRaw_decoded, indent=4, sort_keys=False)
                     self.myLog.writeMessage('JSON output successfully processed!',"DEBUG",functionName)
-                    
-                    self.myLog.writeMessage('Removing useless files ...',"DEBUG",functionName)
-                    if os.path.exists(DataFolderPath+'/'+csvFileName):
-                      os.remove(DataFolderPath+'/'+csvFileName)
-                    else:
-                      self.myLog.writeMessage('The file '+DataFolderPath+'/'+csvFileName+' does not exists!',"DEBUG",functionName)
-                    self.myLog.writeMessage('Removing useless files successfully completed!',"DEBUG",functionName)
-                
                     self.myLog.writeMessage('Estimate Milk Quality predictions completed!',"INFO",functionName)
                     self.myLog.writeMessage('==============================================================',"INFO",functionName)
                     return jsonResult

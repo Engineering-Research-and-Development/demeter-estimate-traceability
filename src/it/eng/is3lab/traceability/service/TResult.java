@@ -17,7 +17,7 @@
 
 package it.eng.is3lab.traceability.service;
 
-public class Result {
+public class TResult {
 	private boolean result;
 	private String errorCode;
 	private String errorDesc;

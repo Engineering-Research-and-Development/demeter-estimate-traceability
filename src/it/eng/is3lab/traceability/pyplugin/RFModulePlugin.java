@@ -3,7 +3,7 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 21/09/2020
+ * Date: 18/12/2020
  * Company: Engineering Ingegneria Informatica S.p.A.
  * 
  * Interface that will be used on PyModuleExecutor to proxify the calls
@@ -14,9 +14,9 @@ package it.eng.is3lab.traceability.pyplugin;
 
 public interface RFModulePlugin {
 	
-	public String execRFTraining(String jsonData,int randomState,int estimatorsNumbers);
+	public String execRFTraining(String url,int randomState,int estimatorsNumbers);
 	
-	public String execRFPrediction(String jsonData);
+	public String execRFPrediction(String url);
 	
 	public void initConfiguration(String confFile,String workpath);
 }

@@ -3,11 +3,12 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 21/09/2020
+ * Date: 18/12/2020
  * Company: Engineering Ingegneria Informatica S.p.A.
  * 
  * Define all the process to configure and use the python interpreter
  * within the JPY library.
+ * All the resources paths are get from the serviceConf.properties file.
  * 
  * 
  * 
@@ -17,9 +18,10 @@
  * 				 that are defined in jpyconfig.properties resource.
  * 				 Before running the python interpreter, process the python modules 
  * 				 defined inside the extraPaths list, clean their path and copy them 
- * 				 into Temp default directory inside a "lib-" folder.
+ * 				 into Temp default directory inside a temporary folder that will be deleted
+ * 				 on server shutdown.
  * 				 Then start Python with cleaned extraPaths that reference the modules
- * 				 inside the Temp/lib-XXXXX folder.
+ * 				 inside the Temp/MilkQuality-PyMod-XXXXX folder.
  * 
  * Parameters  : 
  * 
@@ -29,7 +31,7 @@
  * 
  * Method      : executeFunction
  * 
- * Description : Sends the jsonData string to the training or prediction function 
+ * Description : Sends the AIM traslator URL string to the training or prediction function 
  * 				 of the RandomForest class defined inside the RandomForestModule.
  * 				 The value of "operation" var is used to choose which function execute:
  * 					- "Training" - Execute training function
@@ -37,7 +39,7 @@
  * 				 If the output data received from python is not empty, 
  *               then return the output data, else build a JsonObject containing an error.
  * 
- * Parameters  : String jsonData    - Contains the json string with input data
+ * Parameters  : String url         - Contains the AIM traslator endpoint to request AIM data
  * 				 String operation   - Used to choose which function execute
  * 
  * Return      : String jsonDataResult
@@ -124,7 +126,7 @@ public class PyModuleExecutor {
         }
 	}
 	
-	public String executeFunction(String jsonData, String operation) {
+	public String executeFunction(String url, String operation) {
 		String jsonDataResult = "";
 		try {
 			initInterpreter();
@@ -149,11 +151,11 @@ public class PyModuleExecutor {
 	            	log.debug("TRAINING: Executing training function.");
 	            	int rs = rfConf.getRandomState();
 	            	int est = rfConf.getEstimators();
-	            	jsonDataResult = rfPlugIn.execRFTraining(jsonData,rs,est);
+	            	jsonDataResult = rfPlugIn.execRFTraining(url,rs,est);
 	                break; 
 	            case "Prediction": 
 	            	log.debug("PREDICTION: Executing prediction function.");
-	            	jsonDataResult = rfPlugIn.execRFPrediction(jsonData);
+	            	jsonDataResult = rfPlugIn.execRFPrediction(url);
 	            	break;
 	        }
 		} catch (Exception e) {
@@ -177,5 +179,4 @@ public class PyModuleExecutor {
 		log.debug("Sending output data.");
 		return jsonDataResult;
 	}
-
 }

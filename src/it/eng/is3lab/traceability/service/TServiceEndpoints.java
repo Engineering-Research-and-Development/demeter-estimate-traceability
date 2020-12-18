@@ -3,7 +3,7 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 12/10/2020
+ * Date: 18/12/2020
  * Company: Engineering Ingegneria Informatica S.p.A.
  * 
  * Implements the Traceability Service interface and define the 
@@ -36,11 +36,11 @@
  * Headers     : Content-Type | application/json
  * 		         Accept       | application/json
  *    
- * Description : Get the leatest training data
+ * Description : Trigger Python random forest module to execute the training
  * 
- * Request     : Json input data to be sent to random forest training module
+ * Request     : 
  * 
- * Response    : Response containing json data output
+ * Response    : AIM containing training results
  * 
  * 
  * 
@@ -55,32 +55,11 @@
  * Headers     : Content-Type | application/json
  * 		         Accept       | application/json
  * 
- * Description : Get the leatest prediction data
+ * Description : Trigger Python random forest module to execute the prediction
  * 
- * Request     : Json input data to be sent to random forest prediction module
+ * Request     : 
  * 
- * Response    : Response containing json data output
- * 
- * 
- * 
- * Method      : sendDatasetTraining
- * 
- * Endpoint    : /v1/milkQualityTraining 
- * 
- * Type        : POST
- * 
- *               KEY          | VALUE
- *               -------------|-----------------
- * Headers     : Content-Type | application/json
- * 		         Accept       | application/json
- *    
- * Description : Read the json content of the body inside the request, execute
- * 			     random forest training and store output data
- *               into file using readDataAndStore method.
- * 
- * Request     : Json input data to be stored for future training
- * 
- * Response    : Response containing the data stored and a message about the process
+ * Response    : AIM containing prediction results
  * 
  * 
  * 
@@ -88,98 +67,34 @@
  * 
  * Endpoint    : /v1/milkQualityTraining/randomstate/{int randomstate}/estimators/{int estimators} 
  * 
- * Type        : POST
+ * Type        : GET
  * 
  *               KEY          | VALUE
  *               -------------|-----------------
  * Headers     : Content-Type | application/json
  * 		         Accept       | application/json
  *    
- * Description : Read the json content of the body inside the request, 
- * 				 configure random state and estimators,
- * 				 execute random forest training and store output data and store it
- *               into file using readDataAndStore method.
+ * Description : Configure random state and estimators,
+ * 				 execute random forest training and send the output as response.
  * 
  * Request     : Json input data to be stored for future training
  * 
- * Response    : Response containing the data stored and a message about the process
- * 
- * 
- * 
- * Method      : sendDatasetPrediction
- * 
- * Endpoint    : /v1/milkQualityPrediction
- * 
- * Type        : POST
- * 
- *               KEY          | VALUE
- *               -------------|-----------------
- * Headers     : Content-Type | application/json
- * 		         Accept       | application/json
- * 
- * Description : Read the json content of the body inside the request, execute
- * 			     random forest prediction and store output data into file 
- * 				 using readDataAndStore method.
- * 
- * Request     : Json input data to be stored for future training
- * 
- * Response    : Response containing the data stored and a message about the process
- * 
- * 
- * 
- * Method      : initDataAndSend 
- *    
- * Description : Retrieve the data from json file and send it as Response.
- * 				 The operation string is used to choose which data to get:
- *               	- "Training"   - Init training data and send it to training method
- *               	- "Prediction" - Init prediction data and send it to prediction method
- * 
- * Parameters  : String operation
- * 
- * Return 	   : String jsonDataOutput
- * 
- * 
- * 
- * Method      : readDataAndSend 
- *    
- * Description : Read the request body content and send it to the Python module executor class.
- * 				 The operation string is used to choose which task the python need to execute and
- * 				 also used by TDataManagement class to store data into file, the file name is
- * 				 composed by a prefix that will depends on the value stored by the operation var:
- *               	- "Training"   - The method was called by a training POST service
- *               	- "Prediction" - The method was called by a prediction POST service
- * 
- * Parameters  : InputStream requestBody
- * 				 String 	 operation
- * 
- * Return 	   : String jsonDataOutput
+ * Response    : AIM containing training results
  */
 
 package it.eng.is3lab.traceability.service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.jboss.resteasy.annotations.providers.jaxb.Formatted;
-
 import it.eng.is3lab.traceability.pyplugin.RFConfigurator;
-import it.eng.is3lab.traceability.pyplugin.PyModuleExecutor;
 
 @Path("/v1")
 @Consumes(MediaType.APPLICATION_JSON+";charset=UTF-8")
@@ -191,10 +106,10 @@ public class TServiceEndpoints implements TService{
     @Path("/milkQualityTraining")
     @Formatted
 	public Response training() {
-    	Result result = new Result();
+    	TResult result = new TResult();
     	try {
     		log.debug("Training endpoint reached!");   		
-    		String jsonDataOutput = this.initDataAndSend("Training");
+    		String jsonDataOutput = TDataManagement.sendToPythonAndGetResult("Training");
     		log.debug("Training dataset successfully retrieved!");
     		log.debug("==========================================================");
     		return Response.status(200).entity(jsonDataOutput).build();
@@ -212,10 +127,10 @@ public class TServiceEndpoints implements TService{
     @Path("/milkQualityPrediction")
     @Formatted
 	public Response prediction() {
-    	Result result = new Result();
+    	TResult result = new TResult();
     	try {
     		log.debug("Prediction endpoint reached!");
-    		String jsonDataOutput = this.initDataAndSend("Prediction");
+    		String jsonDataOutput = TDataManagement.sendToPythonAndGetResult("Prediction");
     		log.debug("Prediction dataset successfully retrieved!");
     		log.debug("==========================================================");
     		return Response.status(200).entity(jsonDataOutput).build();
@@ -229,42 +144,17 @@ public class TServiceEndpoints implements TService{
 		}
 	}
     
-    @POST
-    @Path("/milkQualityTraining")
-    @Formatted
-	public Response sendDatasetTraining(@Context HttpServletRequest request, InputStream requestBody) {
-    	Result result = new Result();
-    	String outputData = "";
-    	try {
-    		log.debug("Send training dataset endpoint reached!");
-    		outputData = this.readDataAndSend(requestBody, "Training");
-    		log.debug("Send training dataset complete!");
-    		log.debug("==========================================================");
-    		return Response.status(200).entity("RESULT "+outputData).build();
-		} catch (Exception e) {
-			log.error("An exception occured!",e);
-			e.printStackTrace();
-			result.setErrorCode("1");
-			result.setErrorDesc(e.toString());
-			result.setResult(false);
-			return Response.status(500).entity(result).build();
-		}
-	}
-    
-    @POST
+    @GET
     @Path("/milkQualityTraining/randomstate/{randomstate}/estimators/{estimators}")
     @Formatted
-	public Response configAndSendDatasetTraining(@Context HttpServletRequest request, 
-			@PathParam("randomstate") int randomstate,
-			@PathParam("estimators") int estimators,
-			InputStream requestBody) {
-    	Result result = new Result();
+	public Response configAndSendDatasetTraining(@PathParam("randomstate") int randomstate,	@PathParam("estimators") int estimators) {
+    	TResult result = new TResult();
     	String outputData = "";
     	try {
     		log.debug("Config Send training dataset endpoint reached!");
     		RFConfigurator rfConf = new RFConfigurator();
     		rfConf.setConfiguration(randomstate,estimators);
-    		outputData = this.readDataAndSend(requestBody, "Training");
+    		outputData = TDataManagement.sendToPythonAndGetResult("Training");
     		log.debug("Send training dataset complete!");
     		log.debug("==========================================================");
     		return Response.status(200).entity("RESULT "+outputData).build();
@@ -277,77 +167,4 @@ public class TServiceEndpoints implements TService{
 			return Response.status(500).entity(result).build();
 		}
 	}
-    
-    @POST
-    @Path("/milkQualityPrediction")
-    @Formatted
-	public Response sendDatasetPrediction(@Context HttpServletRequest request, InputStream requestBody) {
-    	Result result = new Result();
-    	String outputData = "";
-    	try {
-    		log.debug("Send prediction dataset endpoint reached!");
-    		outputData = this.readDataAndSend(requestBody, "Prediction");
-    		log.debug("Send prediction dataset complete!");
-    		log.debug("==========================================================");
-    		return Response.status(200).entity("RESULT "+outputData).build();
-		} catch (Exception e) {
-			log.error("An exception occured!",e);
-			e.printStackTrace();
-			result.setErrorCode("1");
-			result.setErrorDesc(e.toString());
-			result.setResult(false);
-			return Response.status(500).entity(result).build();
-		}
-	}
-    
-    private String initDataAndSend(String operation) {
-    	log.debug("Initializing input data.");
-    	String jsonDataOutput = "";
-        log.debug("Initialization completed!");
-    	try {
-    		log.debug("Reading data...");
-    		jsonDataOutput = TDataManagement.readFromFile(operation);
-		} catch (Exception e) {
-			log.error("An exception occured!",e);
-			e.printStackTrace();
-		} 
-		return jsonDataOutput;
-    }
-    
-    private String readDataAndSend(InputStream requestBody,String operation) {
-    	log.debug("Init reading data and store method...");
-    	String jsonDataOutput = "";
-    	String line;
-    	PyModuleExecutor pyExe = new PyModuleExecutor();
-    	InputStreamReader inputStream = new InputStreamReader(requestBody);
-		BufferedReader reader = new BufferedReader(inputStream);
-        StringBuilder jsonDataInput = new StringBuilder();
-        log.debug("Initialization completed!");
-    	try {
-    		log.debug("Reading request body.");
-	        while ((line = reader.readLine()) != null) {
-	        	jsonDataInput.append(line);
-	        }
-	        log.debug("Sending data to python executor class.");
-        	jsonDataOutput = pyExe.executeFunction(jsonDataInput.toString(),operation);
-        	log.debug("Store dataset to file.");
-	        TDataManagement.storeToFile(jsonDataOutput,operation);
-		} catch (IOException e) {
-			log.error("An exception occured!",e);
-			e.printStackTrace();
-		} finally {
-    		if (reader != null) {
-    			try {
-    				log.debug("Closing the reader.");
-    				reader.close();
-    			}
-    			catch (IOException e) {
-    				log.error("An exception occured!",e);
-    				e.printStackTrace();
-    			}
-    		}
-    	}
-    	return jsonDataOutput;
-    }
-
 }
