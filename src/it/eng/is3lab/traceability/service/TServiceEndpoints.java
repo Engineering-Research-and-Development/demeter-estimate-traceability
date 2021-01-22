@@ -87,14 +87,14 @@ package it.eng.is3lab.traceability.service;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+//import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.providers.jaxb.Formatted;
-import it.eng.is3lab.traceability.pyplugin.RFConfigurator;
+//import it.eng.is3lab.traceability.pyplugin.RFConfigurator;
 
 @Path("/v1")
 @Consumes(MediaType.APPLICATION_JSON+";charset=UTF-8")
@@ -105,7 +105,7 @@ public class TServiceEndpoints implements TService{
     @GET
     @Path("/milkQualityTraining")
     @Formatted
-	public Response training() {
+	public synchronized Response training() {
     	TResult result = new TResult();
     	try {
     		log.debug("Training endpoint reached!");   		
@@ -126,7 +126,7 @@ public class TServiceEndpoints implements TService{
     @GET
     @Path("/milkQualityPrediction")
     @Formatted
-	public Response prediction() {
+	public synchronized Response prediction() {
     	TResult result = new TResult();
     	try {
     		log.debug("Prediction endpoint reached!");
@@ -144,6 +144,7 @@ public class TServiceEndpoints implements TService{
 		}
 	}
     
+    /* TEMPORARY OFFLINE...
     @GET
     @Path("/milkQualityTraining/randomstate/{randomstate}/estimators/{estimators}")
     @Formatted
@@ -166,5 +167,5 @@ public class TServiceEndpoints implements TService{
 			result.setResult(false);
 			return Response.status(500).entity(result).build();
 		}
-	}
+	}*/
 }
