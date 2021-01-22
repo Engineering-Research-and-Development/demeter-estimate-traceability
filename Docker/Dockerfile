@@ -5,11 +5,15 @@ FROM tomcat:7.0.104
 ARG MODULE_NAME=EstimateMilkQualityModule
 ARG DIRECTORY_NAME=MQ-WorkDir
 ARG TOMCAT_DIRECTORY=/usr/local/tomcat
+ARG HOST_IP=192.168.1.42
+ARG TRASLATOR_SERVICE_HOST_PORT=9380
 
 # DECLARING ENVIRONMENT VAR
 
 ENV MQ_WORK_DIRECTORY /usr/local/tomcat/
 ENV MQ_PY_RESOURCES /usr/local/tomcat/webapps/${MODULE_NAME}/WEB-INF/classes/python/resources/
+ENV MQ_AIM_TRASLATOR_TRAINING_URL http://${HOST_IP}:${TRASLATOR_SERVICE_HOST_PORT}/demeter-csvManager/rest/traslator/v1/MilkQualityTraining
+ENV MQ_AIM_TRASLATOR_PREDICTION_URL http://${HOST_IP}:${TRASLATOR_SERVICE_HOST_PORT}/demeter-csvManager/rest/traslator/v1/MilkQualityPrediction
 
 # MAVEN INSTALLATION
 
