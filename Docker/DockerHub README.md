@@ -130,4 +130,8 @@ Isn't necessary to execute another training on next use of the application excep
 [GitHub: Demeter Estimate Milk Quality][1] 
 
 [1]: https://github.com/Engineering-Research-and-Development/demeter-estimate-traceability
-[2]: https://hub.docker.com/repository/docker/demeterengteam/pilot4.2-traslator
+[2]: https://hub.docker.com/r/demeterengteam/pilot4.2-traslator
+
+## License
+<!--- If you're not sure which open license to use see https://choosealicense.com/--->
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
