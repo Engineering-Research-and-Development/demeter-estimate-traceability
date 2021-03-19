@@ -3,7 +3,7 @@
  * 
  * Author: Luigi di Corrado
  * Mail: luigi.dicorrado@eng.it
- * Date: 18/12/2020
+ * Date: 19/03/2021
  * Company: Engineering Ingegneria Informatica S.p.A.
  * 
  * Store and Read output data from files.
@@ -62,28 +62,29 @@
 
 package it.eng.is3lab.traceability.service;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+//import java.io.BufferedReader;
+//import java.io.BufferedWriter;
+//import java.io.FileReader;
+//import java.io.FileWriter;
+//import java.io.IOException;
+//import java.io.InputStream;
+//import java.io.InputStreamReader;
 import java.util.ResourceBundle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+//import org.json.JSONObject;
 import it.eng.is3lab.traceability.pyplugin.PyModuleExecutor;
 
 public class TDataManagement {
 	private static final Logger log = LogManager.getLogger(TDataManagement.class);
 	private static ResourceBundle properties = ResourceBundle.getBundle("resources/serviceConf");
-	private static String workDir = System.getenv(properties.getString("milkquality.workDirectory"));
-	private static String filePath = workDir + properties.getString("serviceDataManagement.filePath");
-	private static String fileNameSuffix = properties.getString("serviceDataManagement.fileNameSuffix");
-	private static String fileExtension = properties.getString("serviceDataManagement.fileExtension");
+	//private static String workDir = System.getenv(properties.getString("milkquality.workDirectory"));
+	//private static String filePath = workDir + properties.getString("serviceDataManagement.filePath");
+	//private static String fileNameSuffix = properties.getString("serviceDataManagement.fileNameSuffix");
+	//private static String fileExtension = properties.getString("serviceDataManagement.fileExtension");
 	
 	// (CURRENTLY NOT USED)
+    /*
 	public static void storeToFile(String dataToStore, String operation) {
 		log.debug("Storing data into file.");
 		String fileNamePrefix = operation;
@@ -192,7 +193,7 @@ public class TDataManagement {
     	}
     	return jsonDataOutput;
     }
-    
+    */
     public static String sendToPythonAndGetResult(String operation) {
     	log.debug("Init send to python and get result method...");
     	String jsonDataOutput = "";

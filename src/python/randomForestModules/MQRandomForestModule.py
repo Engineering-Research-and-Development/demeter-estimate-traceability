@@ -171,30 +171,30 @@ class MilkQualityRandomForest:
             remark = myGraph[count]['productType']
             date = myGraph[count+1]['resultTime']
             time = myGraph[count+1]['resultTime']
-            acidity = myGraph[count+2]['hasResult']['numericValue']
-            casein = myGraph[count+3]['hasResult']['numericValue']
-            density = myGraph[count+4]['hasResult']['numericValue']
-            fat = myGraph[count+5]['hasResult']['numericValue']
-            protein = myGraph[count+6]['hasResult']['numericValue']
-            freezingPoint = myGraph[count+7]['hasResult']['numericValue']
-            lactose = myGraph[count+8]['hasResult']['numericValue']
-            snf = myGraph[count+9]['hasResult']['numericValue']
-            urea = myGraph[count+10]['hasResult']['numericValue']
+            acidity = myGraph[count+2]['hasResult'][0]['numericValue']
+            casein = myGraph[count+3]['hasResult'][0]['numericValue']
+            density = myGraph[count+4]['hasResult'][0]['numericValue']
+            fat = myGraph[count+5]['hasResult'][0]['numericValue']
+            protein = myGraph[count+6]['hasResult'][0]['numericValue']
+            freezingPoint = myGraph[count+7]['hasResult'][0]['numericValue']
+            lactose = myGraph[count+8]['hasResult'][0]['numericValue']
+            snf = myGraph[count+9]['hasResult'][0]['numericValue']
+            urea = myGraph[count+10]['hasResult'][0]['numericValue']
 
-            if '#qualityValue-High' in myGraph[count+11]['hasResult']['@id']:
+            if '#qualityValue-High' in myGraph[count+11]['hasResult']:
               actualQuality = 'High'
-            elif '#qualityValue-Medium' in myGraph[count+11]['hasResult']['@id']:
+            elif '#qualityValue-Medium' in myGraph[count+11]['hasResult']:
               actualQuality = 'Medium'
-            elif '#qualityValue-Low' in myGraph[count+11]['hasResult']['@id']:
+            elif '#qualityValue-Low' in myGraph[count+11]['hasResult']:
               actualQuality = 'Low'
             else:
               actualQuality = ''
             
-            if '#qualityValue-High' in myGraph[count+12]['hasResult']['@id']:
+            if '#qualityValue-High' in myGraph[count+12]['hasResult']:
               predictedQuality = 'High'
-            elif '#qualityValue-Medium' in myGraph[count+12]['hasResult']['@id']:
+            elif '#qualityValue-Medium' in myGraph[count+12]['hasResult']:
               predictedQuality = 'Medium'
-            elif '#qualityValue-Low' in myGraph[count+12]['hasResult']['@id']:
+            elif '#qualityValue-Low' in myGraph[count+12]['hasResult']:
               predictedQuality = 'Low'
             else:
               predictedQuality = ''
