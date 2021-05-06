@@ -128,22 +128,34 @@ class MilkQualityRandomForest:
         FN = cnf_matrix.sum(axis=1) - np.diag(cnf_matrix)
         TP = np.diag(cnf_matrix)
         TN = cnf_matrix.sum() - (FP + FN + TP)
+        TPR = 0
+        PPV = 0
+        FPR = 0
+        ACC = 0
+        MTPR = 0
+        MPPV = 0
+        MFPR = 0
+        MACC = 0
         # Sensitivity, hit rate, recall, or true positive rate
-        TPR = (TP/(TP+FN))*100
-        TPR = [round(val,2) for val in TPR]
-        MTPR = round((np.sum(TPR)/len(TPR)),2)
+        if (TP+FN) > 0:
+          TPR = (TP/(TP+FN))*100
+          TPR = [round(val,2) for val in TPR]
+          MTPR = round((np.sum(TPR)/len(TPR)),2)
         # Precision or positive predictive value
-        PPV = (TP/(TP+FP))*100
-        PPV = [round(val,2) for val in PPV]
-        MPPV = round((np.sum(PPV)/len(PPV)),2)
+        if (TP+FP) > 0:
+          PPV = (TP/(TP+FP))*100
+          PPV = [round(val,2) for val in PPV]
+          MPPV = round((np.sum(PPV)/len(PPV)),2)
         # Fall out or false positive rate
-        FPR = (FP/(FP+TN))*100
-        FPR = [round(val,2) for val in FPR]
-        MFPR = round((np.sum(FPR)/len(FPR)),2)
+        if (FP+TN) > 0:
+          FPR = (FP/(FP+TN))*100
+          FPR = [round(val,2) for val in FPR]
+          MFPR = round((np.sum(FPR)/len(FPR)),2)
         # Overall accuracy
-        ACC = ((TP+TN)/(TP+FP+FN+TN))*100
-        ACC = [round(val,2) for val in ACC]
-        MACC = round((np.sum(ACC)/len(ACC)),2)
+        if (TP+FP+FN+TN) > 0:
+          ACC = ((TP+TN)/(TP+FP+FN+TN))*100
+          ACC = [round(val,2) for val in ACC]
+          MACC = round((np.sum(ACC)/len(ACC)),2)
 
         return(TP, FP, TN, FN, MFPR, MTPR, MPPV, MACC)
 
