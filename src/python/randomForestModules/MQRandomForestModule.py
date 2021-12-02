@@ -122,40 +122,70 @@ class MilkQualityRandomForest:
       self.myLog.initConfiguration(confFile)
       
     def measure(self, y_actual, y_predict):
+        # GET FUNCTION NAME
+        functionName = sys._getframe().f_code.co_name
+        
         cnf_matrix = confusion_matrix(y_actual,y_predict)
 
         FP = cnf_matrix.sum(axis=0) - np.diag(cnf_matrix)  
         FN = cnf_matrix.sum(axis=1) - np.diag(cnf_matrix)
         TP = np.diag(cnf_matrix)
         TN = cnf_matrix.sum() - (FP + FN + TP)
-        TPR = 0
-        PPV = 0
-        FPR = 0
-        ACC = 0
+        
+        FP = FP.astype(float)
+        FN = FN.astype(float)
+        TP = TP.astype(float)
+        TN = TN.astype(float)
+    
+        TPR = []
+        PPV = []
+        FPR = []
+        ACC = []
+        
         MTPR = 0
         MPPV = 0
         MFPR = 0
         MACC = 0
+
         # Sensitivity, hit rate, recall, or true positive rate
-        if (TP+FN) > 0:
-          TPR = (TP/(TP+FN))*100
-          TPR = [round(val,2) for val in TPR]
-          MTPR = round((np.sum(TPR)/len(TPR)),2)
+        for x, y in zip(TP,FN):
+            if (x + y) > 0:
+                TPR.append((x/(x+y))*100)
+            else:
+                self.myLog.writeMessage('WARNING! Zero division spotted on True Positive Rate (TPR)', "WARN",functionName)
+                TPR.append(0);
+        TPR = [round(val,2) for val in TPR]
+        MTPR = round((np.sum(TPR)/len(TPR)),2)
+    
         # Precision or positive predictive value
-        if (TP+FP) > 0:
-          PPV = (TP/(TP+FP))*100
-          PPV = [round(val,2) for val in PPV]
-          MPPV = round((np.sum(PPV)/len(PPV)),2)
+        for x, y in zip(TP,FP):
+            if (x + y) > 0:
+                PPV.append((x/(x+y))*100)
+            else:
+                self.myLog.writeMessage('WARNING! Zero division spotted on Precision (PPV)', "WARN",functionName)
+                PPV.append(0);
+        PPV = [round(val,2) for val in PPV]
+        MPPV = round((np.sum(PPV)/len(PPV)),2)
+        
         # Fall out or false positive rate
-        if (FP+TN) > 0:
-          FPR = (FP/(FP+TN))*100
-          FPR = [round(val,2) for val in FPR]
-          MFPR = round((np.sum(FPR)/len(FPR)),2)
+        for x, y in zip(FP,TN):
+            if (x + y) > 0:
+                FPR.append((x/(x+y))*100)
+            else:
+                self.myLog.writeMessage('WARNING! Zero division spotted on False Positive Rate (FPR)', "WARN",functionName)
+                FPR.append(0);
+        FPR = [round(val,2) for val in FPR]
+        MFPR = round((np.sum(FPR)/len(FPR)),2)
+        
         # Overall accuracy
-        if (TP+FP+FN+TN) > 0:
-          ACC = ((TP+TN)/(TP+FP+FN+TN))*100
-          ACC = [round(val,2) for val in ACC]
-          MACC = round((np.sum(ACC)/len(ACC)),2)
+        for x, y, z, k in zip(TP,FP,FN,TN):
+            if (x + y + z + k) > 0:
+                ACC.append(((x+k)/(x+y+z+k))*100)
+            else:
+                self.myLog.writeMessage('WARNING! Zero division spotted on Accuracy (ACC)', "WARN",functionName)
+                ACC.append(0);
+        ACC = [round(val,2) for val in ACC]
+        MACC = round((np.sum(ACC)/len(ACC)),2)
 
         return(TP, FP, TN, FN, MFPR, MTPR, MPPV, MACC)
 
@@ -322,8 +352,9 @@ class MilkQualityRandomForest:
                 df_result.sort_index(inplace=True)
                 df_result['Density'] = [float('%.3f' % val) for val in df_result['Density']]
                 df_result['Date'] = pd.to_datetime(df_result['Date'])
-                df_result['Date'] = pd.to_datetime(df_result['Date'], format = '%Y-%m-%d').dt.strftime('%d/%m/%Y')
-
+                df_result['Date'] = pd.to_datetime(df_result['Date'], format = '%Y-%m-%d').dt.strftime('%Y-%m-%d')
+                #df_result['Date'] = pd.to_datetime(df_result['Date'], format = '%Y-%m-%d').dt.strftime('%d/%m/%Y')
+                
                 # Extract RAW and PROCESSED data into two different datasets
                 self.myLog.writeMessage('Extract data for RAW and PROCESSED milk ...',"DEBUG",functionName)
                 dsRaw = df_result[df_result['Remark']=='Raw']
