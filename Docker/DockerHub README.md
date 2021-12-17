@@ -30,7 +30,7 @@ The following components are needed for start using this component:
 
 ## Pull the image
 	
-`docker pull demeterengteam/estimate-milk-quality:candidate`
+`docker pull demeterengteam/estimate-milk-quality:latest`
 
 ## Run the application
 
@@ -39,7 +39,7 @@ It's possible to run the application using <!--`docker run` or --> `docker-compo
 <!--
 ### Docker run
 
-`docker run -p 9280:8080 demeterengteam/estimate-milk-quality:candidate`
+`docker run -p 9280:8080 demeterengteam/estimate-milk-quality:latest`
 
 Set the preferred port to use instead of 9280.
 -->
@@ -55,7 +55,7 @@ version: '3'
 
 services:
     milkquality:
-        image: demeterengteam/estimate-milk-quality:candidate
+        image: demeterengteam/estimate-milk-quality:latest
         ports:
           - '${HOST_PORT}:8080'
         environment: 
